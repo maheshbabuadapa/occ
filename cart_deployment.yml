@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: occ-cart
+  labels:
+    app: occ-cart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: occ-cart
+  template:
+    metadata:
+      labels:
+        app: occ-cart
+    spec:
+      containers:
+      - name: cart
+        image: occ:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: cart
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+      volumes:
+        - name: cart
+          configMap:
+            name: cart  

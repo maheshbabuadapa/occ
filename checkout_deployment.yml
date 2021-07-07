@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: occ-checkout
+  labels:
+    app: occ-checkout
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: occ-checkout
+  template:
+    metadata:
+      labels:
+        app: occ-checkout
+    spec:
+      containers:
+      - name: checkout
+        image: occ:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: checkout
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+      volumes:
+        - name: checkout
+          configMap:
+            name: checkout 

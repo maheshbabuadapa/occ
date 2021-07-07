@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: occ-payment
+  labels:
+    app: occ-payment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: occ-payment
+  template:
+    metadata:
+      labels:
+        app: occ-payment
+    spec:
+      containers:
+      - name: payment
+        image: occ:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: payment
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+      volumes:
+        - name: payment
+          configMap:
+            name: payment 

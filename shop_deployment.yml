@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: occ-shop
+  labels:
+    app: occ-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: occ-shop
+  template:
+    metadata:
+      labels:
+        app: occ-shop
+    spec:
+      containers:
+      - name: shop
+        image: occ:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: shop
+            mountPath: /usr/share/nginx/html/index.html
+            subPath: index.html
+      volumes:
+        - name: shop
+          configMap:
+            name: shop   

@@ -1,0 +1,8 @@
+Build the Docker image
+Example: docker build -t occ .
+Create all configmaps files
+Example:  kubectl create -f configmap_shop.yml
+create all deployment files
+Example: kubectl create -f shop_deployment.yml
+create all service files
+Example: kubectl create -f shop_service.yml

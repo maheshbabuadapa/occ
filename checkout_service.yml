@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: occ-checkout-service
+  labels:
+    name: occ-checkout-service
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 30038
+      name: http  
+  selector:
+    name: occ-checkout

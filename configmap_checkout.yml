@@ -1,0 +1,17 @@
+apiVersion: v1
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Page Title</title>
+    </head>
+    <body>
+
+    <h1>checkout</h1>
+
+    </body>
+    </html>
+kind: ConfigMap
+metadata:
+  name: checkout
