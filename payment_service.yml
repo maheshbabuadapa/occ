@@ -11,4 +11,4 @@ spec:
       nodePort: 30039
       name: http  
   selector:
-    name: occ-payment
+    app: occ-payment
