@@ -11,4 +11,4 @@ spec:
       nodePort: 30038
       name: http  
   selector:
-    name: occ-checkout
+    app: occ-checkout
