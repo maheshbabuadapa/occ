@@ -11,4 +11,4 @@ spec:
       nodePort: 30035
       name: http 
   selector:
-    name: occ-shop
+    app: occ-shop
