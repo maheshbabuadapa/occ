@@ -11,4 +11,4 @@ spec:
       nodePort: 30037
       name: http  
   selector:
-    name: occ-cart
+    app: occ-cart
