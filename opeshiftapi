@@ -1,0 +1,45 @@
+from flask import Flask, jsonify
+import subprocess
+
+app = Flask(__name__)
+
+# Replace these values with your OpenShift cluster URL, username, password, and namespace
+CLUSTER_URL = "https://your-openshift-cluster-url:6443"
+USERNAME = "your-username"
+PASSWORD = "your-password"
+NAMESPACE = "your-namespace"
+
+def login_to_cluster():
+    login_cmd = ["oc", "login", CLUSTER_URL, "-u", USERNAME, "-p", PASSWORD, "--insecure-skip-tls-verify=true"]
+    result = subprocess.run(login_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        print(f"Login failed: {result.stderr}")
+    else:
+        print("Login successful")
+
+def get_pods():
+    login_to_cluster()
+    cmd = ["oc", "get", "pods", "-n", NAMESPACE, "-o", "jsonpath={range .items[*]}{.metadata.name}{','}{.status.phase}{','}{range .spec.containers[*]}{.image}{';'}{end}{'\n'}{end}"]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    pods = []
+    if result.returncode == 0:
+        lines = result.stdout.strip().split('\n')
+        for line in lines:
+            parts = line.split(',')
+            name = parts[0]
+            status = parts[1]
+            images = parts[2].rstrip(';').split(';')
+            pods.append({'name': name, 'status': status, 'images': images})
+    else:
+        print(f"Error executing command: {result.stderr}")
+
+    return pods
+
+@app.route('/')
+def index():
+    pods = get_pods()
+    return jsonify(pods)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
