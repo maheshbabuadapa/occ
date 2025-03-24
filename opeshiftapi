@@ -17,29 +17,26 @@ def login_to_cluster():
     else:
         print("Login successful")
 
-def get_pods():
+def get_deployment_images():
     login_to_cluster()
-    cmd = ["oc", "get", "pods", "-n", NAMESPACE, "-o", "jsonpath={range .items[*]}{.metadata.name}{','}{.status.phase}{','}{range .spec.containers[*]}{.image}{';'}{end}{'\n'}{end}"]
+    cmd = [
+        "oc", "get", "deployments", "-n", NAMESPACE, "-o",
+        "jsonpath={range .items[*]}{range .spec.template.spec.containers[*]}{.image}{'\n'}{end}{end}"
+    ]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    pods = []
+    images = []
     if result.returncode == 0:
-        lines = result.stdout.strip().split('\n')
-        for line in lines:
-            parts = line.split(',')
-            name = parts[0]
-            status = parts[1]
-            images = parts[2].rstrip(';').split(';')
-            pods.append({'name': name, 'status': status, 'images': images})
+        images = list(set(result.stdout.strip().split('\n')))
     else:
         print(f"Error executing command: {result.stderr}")
 
-    return pods
+    return images
 
 @app.route('/')
 def index():
-    pods = get_pods()
-    return jsonify(pods)
+    images = get_deployment_images()
+    return jsonify(images)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
