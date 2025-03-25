@@ -62,7 +62,6 @@ def get_deployments_info(cluster):
 
     return deployments
 
-import subprocess
 
 def get_all_pods_logs(cluster, deployment_name, timeout=30):
     try:
