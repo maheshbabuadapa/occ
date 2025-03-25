@@ -62,27 +62,56 @@ def get_deployments_info(cluster):
 
     return deployments
 
-def get_pod_logs(cluster, deployment_name):
-    login_to_cluster(cluster)
-    namespace = CLUSTERS[cluster]["namespace"]
-    get_pods_cmd = [
-        "oc", "get", "pods", "-n", namespace, "-l", f"app={deployment_name}",
-        "-o", "jsonpath={.items[0].metadata.name}"
-    ]
-    pod_result = subprocess.run(get_pods_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
-    if pod_result.returncode != 0:
-        return f"Error fetching pod name: {pod_result.stderr}"
+import subprocess
 
-    pod_name = pod_result.stdout.strip()
+def get_all_pods_logs(cluster, deployment_name, timeout=30):
+    try:
+        login_to_cluster(cluster)
+        namespace = CLUSTERS[cluster]["namespace"]
 
-    logs_cmd = ["oc", "logs", pod_name, "-n", namespace]
-    logs_result = subprocess.run(logs_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # Fetch all pod names matching the deployment label
+        get_pods_cmd = [
+            "oc", "get", "pods", "-n", namespace, "-l", f"app={deployment_name}",
+            "-o", "jsonpath={.items[*].metadata.name}"
+        ]
+        pod_result = subprocess.run(
+            get_pods_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout
+        )
 
-    if logs_result.returncode != 0:
-        return f"Error fetching logs: {logs_result.stderr}"
+        if pod_result.returncode != 0:
+            return f"Error fetching pod names: {pod_result.stderr}"
 
-    return logs_result.stdout
+        pod_names = pod_result.stdout.strip().split()
+
+        if not pod_names:
+            return f"No pods found for deployment '{deployment_name}' in namespace '{namespace}'."
+
+        logs = {}
+        for pod_name in pod_names:
+            logs_cmd = ["oc", "logs", pod_name, "-n", namespace]
+            logs_result = subprocess.run(
+                logs_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=timeout
+            )
+            if logs_result.returncode == 0:
+                logs[pod_name] = logs_result.stdout
+            else:
+                logs[pod_name] = f"Error fetching logs: {logs_result.stderr}"
+
+        return logs
+
+    except subprocess.TimeoutExpired:
+        return "Command timed out."
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
 
 @app.route('/<env>')
 def deployments_info(env):
