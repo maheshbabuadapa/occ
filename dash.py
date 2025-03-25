@@ -5,7 +5,7 @@ import pandas as pd
 
 API_URL = "http://localhost:5000"
 
-app = Dash(__name__)
+app = Dash(__name__, suppress_callback_exceptions=True)
 
 app.layout = html.Div(style={'padding': '20px', 'fontFamily': 'Arial'}, children=[
     html.H2('OpenShift Deployments Dashboard', style={'color': '#007bff'}),
@@ -57,16 +57,53 @@ def update_deployments(n_clicks, env):
         return html.Div('Failed to fetch deployments', style={'color': 'red'})
 
     deployments = response.json()
+
+    # Enhance data by adding status column
+    for dep in deployments:
+        ready = dep.get("ready", "")
+        try:
+            ready_replicas, total_replicas = map(int, ready.split('/'))
+            if ready_replicas == total_replicas and total_replicas > 0:
+                dep["status"] = "Running ✅"
+            else:
+                dep["status"] = "Not Ready ❌"
+        except:
+            dep["status"] = "Unknown ⚠️"
+        dep.pop("ready", None)  # remove the 'ready' column
+
     df = pd.DataFrame(deployments)
+
+    # Define style based on status
+    style_data_conditional = [
+        {
+            'if': {
+                'filter_query': '{status} = "Running ✅"',
+                'column_id': 'status'
+            },
+            'backgroundColor': '#d4edda',
+            'color': '#155724',
+            'fontWeight': 'bold'
+        },
+        {
+            'if': {
+                'filter_query': '{status} = "Not Ready ❌"',
+                'column_id': 'status'
+            },
+            'backgroundColor': '#f8d7da',
+            'color': '#721c24',
+            'fontWeight': 'bold'
+        }
+    ]
 
     return dash_table.DataTable(
         id='table',
-        columns=[{"name": i, "id": i} for i in df.columns],
+        columns=[{"name": i.capitalize(), "id": i} for i in df.columns],
         data=df.to_dict('records'),
         row_selectable='single',
         style_table={'overflowX': 'auto'},
         style_header={'backgroundColor': '#007bff', 'color': 'white', 'fontWeight': 'bold'},
         style_cell={'padding': '10px', 'textAlign': 'left'},
+        style_data_conditional=style_data_conditional
     )
 
 @app.callback(
@@ -90,4 +127,4 @@ def display_logs(selected_rows, rows, env):
     return logs
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8050)
+    app.run(debug=True, port=8050)
